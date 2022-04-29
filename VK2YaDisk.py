@@ -55,7 +55,7 @@ class DownloadFromVk:
             download_log = {'file_name': file_name, 'size': self.size}
             logs_list.append(download_log)
 
-        with open('logs/log.json', 'a') as file:
+        with open('log.json', 'a') as file:
             json.dump(logs_list, file, indent=2)
 
         if 500 > status != 400:
