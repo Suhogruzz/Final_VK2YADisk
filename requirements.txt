@@ -1,6 +1,5 @@
 requests 
 json
 PySimpleGUI 
-tqdm 
 configparser
 time

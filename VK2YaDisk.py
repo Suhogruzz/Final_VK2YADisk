@@ -1,7 +1,6 @@
 import requests
 import json
 import PySimpleGUI as sg
-from tqdm import tqdm
 import configparser
 import time
 
@@ -21,7 +20,7 @@ class DownloadFromVk:
         self.upload_url_api = config['yadisk_api']['upload_url_api']
         self.mkdir_url = config['yadisk_api']['mkdir_url']
 
-    def get_photos_method(self, user_id):
+    def upload_photos(self, user_id):
         names_list = []
         logs_list = []
         yaheaders = {'Content-Type': 'application/json',
@@ -35,33 +34,52 @@ class DownloadFromVk:
                     }
         response = requests.get(self.get_photos_method_url, params=vkparams)
         profile_list = response.json()
-        for file in tqdm(profile_list['response']['items']):
-            time.sleep(3)
-            self.size = file['sizes'][-1]['type']
-            photo_url = file['sizes'][-1]['url']
-            file_name = file['likes']['count']
-            if file_name not in names_list:
-                names_list.append(file_name)
+        amount_to_download = int(sg.popup_get_text(f"Обнаружено {profile_list['response']['count']} фото",
+                                                   default_text='Сколько фото скачать?'
+                                                   ))
+        if amount_to_download in range(0, profile_list['response']['count']):
+            profile_list['response']['count'] = amount_to_download
+            count = amount_to_download
+            i = 0
+            for file in profile_list['response']['items']:
+                sg.one_line_progress_meter('Процесс загрузки',
+                                           i+1,
+                                           amount_to_download,
+                                           'Загружено фото:',
+                                           )
+                time.sleep(3)
+                self.size = file['sizes'][-1]['type']
+                photo_url = file['sizes'][-1]['url']
+                file_name = file['likes']['count']
+                if file_name not in names_list:
+                    names_list.append(file_name)
+                else:
+                    file_name = str(file['likes']['count']) + str(file['date'])
+                    names_list.append(file_name)
+                download_photo = requests.get(photo_url)
+                yaparams = {'path': f'{self.file_path}/{file_name}'}
+                get_upload_url = requests.get(self.upload_url_api, headers=yaheaders, params=yaparams)
+                get_url = get_upload_url.json()
+                upload_url = get_url['href']
+                file_upload = requests.put(upload_url, download_photo)
+                status = file_upload.status_code
+                download_log = {'file_name': file_name, 'size': self.size}
+                logs_list.append(download_log)
+                i += 1
+                count -= 1
+                if count == 0:
+                    break
+            with open('log.json', 'a') as file:
+                json.dump(logs_list, file, indent=2)
+
+            if 500 > status != 400:
+                success_popup()
             else:
-                file_name = str(file['likes']['count']) + str(file['date'])
-                names_list.append(file_name)
-            download_photo = requests.get(photo_url)
-            yaparams = {'path': f'{self.file_path}/{file_name}'}
-            get_upload_url = requests.get(self.upload_url_api, headers=yaheaders, params=yaparams)
-            get_url = get_upload_url.json()
-            upload_url = get_url['href']
-            file_upload = requests.put(upload_url, download_photo)
-            status = file_upload.status_code
-            download_log = {'file_name': file_name, 'size': self.size}
-            logs_list.append(download_log)
-
-        with open('log.json', 'a') as file:
-            json.dump(logs_list, file, indent=2)
-
-        if 500 > status != 400:
-            print('Фотографии успешно загружены!')
+                error_popup()
+        elif amount_to_download is None:
+            pass
         else:
-            print('Ошибка при загрузке фотографий')
+            new_upload.upload_photos(new_upload.user_id)
 
     def create_folder(self):
         params = {'path': self.file_path}
@@ -97,9 +115,32 @@ def init_input():
     return vk_user_id, ya_disk_token, vk_token, ya_disk_path
 
 
+def success_popup():
+    layout = [[sg.Text('Фото успешно загружены на Yandex.Диск!')],
+              [sg.Button('OK')]
+              ]
+    window = sg.Window('Успех', layout)
+
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == 'OK':
+            break
+
+
+def error_popup():
+    layout = [[sg.Text('Ошибка при загрузке фотографий!')],
+              [sg.Button('Отмена')]
+              ]
+    window = sg.Window('Ошибка', layout)
+
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == 'Отмена':
+            break
+
 
 init_input()
 new_upload = DownloadFromVk(vk_user_id, vk_token, ya_disk_token)
 new_upload.create_folder()
-save_photos = new_upload.get_photos_method(new_upload.user_id)
+new_upload.upload_photos(new_upload.user_id)
 
