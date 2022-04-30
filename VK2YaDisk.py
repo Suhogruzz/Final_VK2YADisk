@@ -4,6 +4,7 @@ import PySimpleGUI as sg
 import configparser
 import time
 
+# Загрузка настроек из файла settings.ini
 config = configparser.ConfigParser()
 config.read("settings.ini")
 
@@ -20,6 +21,8 @@ class DownloadFromVk:
         self.upload_url_api = config['yadisk_api']['upload_url_api']
         self.mkdir_url = config['yadisk_api']['mkdir_url']
 
+# Получение данных о фото с VK, создание названия файла и загрузка их на YADisk.
+# GUI с прогресс-баром загрузки и popup окном выбора количества фото
     def upload_photos(self, user_id):
         names_list = []
         logs_list = []
@@ -81,6 +84,7 @@ class DownloadFromVk:
         else:
             new_upload.upload_photos(new_upload.user_id)
 
+# Создание папки на YADisk
     def create_folder(self):
         params = {'path': self.file_path}
         headers = {'Content-Type': 'application/json',
@@ -88,6 +92,7 @@ class DownloadFromVk:
         requests.api.put(self.mkdir_url, headers=headers, params=params)
 
 
+# GUI с вводом начальных параметров программы
 def init_input():
     global ya_disk_token, vk_token, vk_user_id, ya_disk_path
     layout = [[sg.Text('Введите VKid')],
@@ -115,6 +120,7 @@ def init_input():
     return vk_user_id, ya_disk_token, vk_token, ya_disk_path
 
 
+# Popup успешной загрузки
 def success_popup():
     layout = [[sg.Text('Фото успешно загружены на Yandex.Диск!')],
               [sg.Button('OK')]
@@ -127,6 +133,7 @@ def success_popup():
             break
 
 
+# Popup ошибки загрузки
 def error_popup():
     layout = [[sg.Text('Ошибка при загрузке фотографий!')],
               [sg.Button('Отмена')]
