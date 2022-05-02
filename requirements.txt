@@ -1,5 +1,3 @@
-requests 
-json
-PySimpleGUI 
-configparser
-time
+requests==2.27.1 
+PySimpleGUI==4.59.0
+configparser==5.2.0
