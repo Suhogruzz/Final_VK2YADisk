@@ -37,8 +37,22 @@ class DownloadFromVk:
                     }
         response = requests.get(self.get_photos_method_url, params=vkparams)
         profile_list = response.json()
+        print(profile_list)
+        if 'error' in profile_list:
+            layout = [[sg.Text(f"Ошибка {profile_list['error']['error_code']}")],
+                      [sg.Text(f"{profile_list['error']['error_msg']}")],
+                      [sg.Button('Отмена')]
+                      ]
+            window = sg.Window('Ошибка', layout)
+
+            while True:
+                event, values = window.read()
+                if event == sg.WIN_CLOSED or event == 'Отмена':
+                    break
+        else:
+            pass
         amount_to_download = int(sg.popup_get_text(f"Обнаружено {profile_list['response']['count']} фото",
-                                                   default_text='Сколько фото скачать?'
+                                                   'Сколько фото скачать?'
                                                    ))
         if amount_to_download in range(0, profile_list['response']['count']):
             profile_list['response']['count'] = amount_to_download
@@ -135,6 +149,18 @@ def success_popup():
 # Popup ошибки загрузки
 def error_popup():
     layout = [[sg.Text('Ошибка при загрузке фотографий!')],
+              [sg.Button('Отмена')]
+              ]
+    window = sg.Window('Ошибка', layout)
+
+    while True:
+        event, values = window.read()
+        if event == sg.WIN_CLOSED or event == 'Отмена':
+            break
+
+
+def key_error_popup():
+    layout = [[sg.Text('Ошибка, альбом из которого вы пытаетесь скачать фото приватный')],
               [sg.Button('Отмена')]
               ]
     window = sg.Window('Ошибка', layout)
