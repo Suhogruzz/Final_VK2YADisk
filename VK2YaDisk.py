@@ -11,11 +11,11 @@ config.read("settings.ini")
 
 class DownloadFromVk:
 
-    def __init__(self, user_id, token: str, yadisk: str):
+    def __init__(self, user_id, token, yadisk, path):
         self.user_id = user_id
         self.token = token
         self.yadisk = yadisk
-        self.file_path = ya_disk_path
+        self.file_path = path
         self.api_version = config['vk_api']['api_version']
         self.get_photos_method_url = config['vk_api']['get_photos_method_url']
         self.upload_url_api = config['yadisk_api']['upload_url_api']
@@ -94,7 +94,6 @@ class DownloadFromVk:
 
 # GUI с вводом начальных параметров программы
 def init_input():
-    global ya_disk_token, vk_token, vk_user_id, ya_disk_path
     layout = [[sg.Text('Введите VKid')],
               [sg.InputText()],
               [sg.Text('Введите OAuth токен с Полигона')],
@@ -146,8 +145,8 @@ def error_popup():
             break
 
 
-init_input()
-new_upload = DownloadFromVk(vk_user_id, vk_token, ya_disk_token)
+vk_user_id, ya_disk_token, vk_token, ya_disk_path = init_input()
+new_upload = DownloadFromVk(vk_user_id, vk_token, ya_disk_token, ya_disk_path)
 new_upload.create_folder()
 new_upload.upload_photos(new_upload.user_id)
 
